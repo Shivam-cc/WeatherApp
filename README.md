@@ -54,3 +54,7 @@ Everything is in [`src/main.rs`](src/main.rs).
 - Open-Meteo's free tier is for non-commercial use.
 - While weather is shown, the window redraws continuously to animate the sky, so it uses some CPU.
 - The screenshots show four real cities, with the conditions set by hand so each kind of sky appears. Temperatures and forecasts are the real ones from when the screenshots were taken.
+
+## License
+
+[MIT](LICENSE)
