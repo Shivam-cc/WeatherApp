@@ -73,9 +73,9 @@
   color: var(--ink);
 }
 
-/* Fluid scale: 16px at 1000px wide, ~26px at 2560px (4K gets 28px max). Everything else is in rem. */
+/* Fluid scale from the smaller of width and height: 16px at 1000x620 (floor 12px: the real window is 834x517 CSS px at 120% DPI), ~26px at 2560 wide (28px max). Everything else is in rem. */
 html {
-  font-size: clamp(16px, 0.641vw + 9.6px, 28px);
+  font-size: clamp(12px, min(0.641vw + 9.6px, 2.58vh), 28px);
 }
 
 *,

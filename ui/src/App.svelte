@@ -76,7 +76,7 @@
   .app {
     height: 100vh;
     display: grid;
-    grid-template-rows: 62fr 38fr;
+    grid-template-rows: minmax(0, 1fr) auto; /* scene area flexes, band sizes to its content */
     transition: filter var(--dur-base);
   }
   .app.loading {
