@@ -3,6 +3,7 @@
   import Icon from './Icon.svelte';
   import { app, loadCity, loadLocation, toast } from '../state/weather.svelte';
   import { searchCity } from '../lib/api';
+  import { DUR } from '../motion/tokens';
   import type { Location } from '../bindings/Location';
 
   let q = $state('');
@@ -10,6 +11,8 @@
   let idx = $state(0);
   let input: HTMLInputElement | undefined = $state();
   let seq = 0;
+  let retry = ''; // query to restore if a submitted search fails
+  let shake = $state(false);
 
   const items = $derived(q.trim() ? results : app.recents);
 
@@ -32,14 +35,28 @@
 
   $effect(() => {
     if (!app.paletteOpen) return;
-    q = '';
+    const failed = retry !== ''; // plain variable: reading `shake` here would make this effect re-run
+    q = retry;
+    retry = '';
+    if (failed) {
+      shake = true;
+      setTimeout(() => (shake = false), DUR.shake);
+    }
     tick().then(() => input?.focus());
   });
 
-  function pick(l: Location) {
+  // Close at once so the loader shows; if the search fails, reopen with the same text and shake the field.
+  async function submit(go: () => Promise<boolean>) {
+    const typed = q.trim();
     app.paletteOpen = false;
-    loadLocation(l);
+    await tick(); // let the close flush so reopening below re-runs the open effect
+    if (!(await go())) {
+      retry = typed;
+      app.paletteOpen = true;
+    }
   }
+
+  const pick = (l: Location) => submit(() => loadLocation(l));
 
   function key(e: KeyboardEvent) {
     if (e.key === 'Escape') app.paletteOpen = false;
@@ -48,10 +65,7 @@
       if (items.length) idx = (idx + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
     } else if (e.key === 'Enter') {
       if (items[idx]) pick(items[idx]);
-      else if (q.trim()) {
-        app.paletteOpen = false;
-        loadCity(q.trim());
-      }
+      else if (q.trim()) submit(() => loadCity(q.trim()));
     }
   }
 
@@ -68,8 +82,8 @@
 {#if app.paletteOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="scrim" onclick={() => (app.paletteOpen = false)}></div>
-  <div class="glass palette" role="dialog" aria-modal="true" aria-label="Search location">
-    <div class="field">
+  <div class="glass palette on-dark" role="dialog" aria-modal="true" aria-label="Search location">
+    <div class="field" class:shake>
       <Icon name="search" />
       <input
         bind:this={input}
@@ -129,6 +143,9 @@
     font: inherit;
     font-size: 1.1rem;
     outline: none;
+  }
+  .field.shake {
+    animation: shake var(--dur-shake, 400ms) linear;
   }
   ul {
     list-style: none;

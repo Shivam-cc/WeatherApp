@@ -3,7 +3,7 @@
   import { app } from '../state/weather.svelte';
 </script>
 
-<div class="empty">
+<div class="empty enter" style="--delay: 300ms">
   <h1>Search a city</h1>
   <p class="muted">See the sky wherever you are curious about.</p>
   <button class="glass" onclick={() => (app.paletteOpen = true)}>

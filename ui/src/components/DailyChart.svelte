@@ -7,15 +7,20 @@
   const days = $derived(app.weather!.daily);
   const [lo, hi] = $derived([Math.min(...days.map((d) => d.min)), Math.max(...days.map((d) => d.max))]);
   const span = $derived(Math.max(hi - lo, 1));
-  const path = $derived(
-    smooth(days.map((d, i) => [((i + 0.5) / days.length) * W, H - 6 - ((d.max - lo) / span) * (H - 12)])),
-  );
+  const y = (v: number) => H - 6 - ((v - lo) / span) * (H - 12);
+  const path = $derived(smooth(days.map((d, i) => [((i + 0.5) / days.length) * W, y(d.max)])));
 </script>
 
 <div class="chart" role="img" aria-label="Five day forecast: {days.map((d) => `${weekday(d.date)} ${temp(d.max, settings.temp)}`).join(', ')}">
-  <svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true">
-    <path d={path} fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke" />
-  </svg>
+  <div class="plot">
+    <svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true">
+      <!-- pathLength=1 lets the draw-on animation use a 0..1 dash regardless of the curve's real length -->
+      <path d={path} pathLength="1" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke" />
+    </svg>
+    {#each days as d, i}
+      <i class="pt" style="left: {((i + 0.5) / days.length) * 100}%; top: {(y(d.max) / H) * 100}%; animation-delay: {900 + i * 80}ms"></i>
+    {/each}
+  </div>
   <div class="cols">
     {#each days as d, i}
       <div class="col" class:today={i === 0}>
@@ -32,10 +37,38 @@
   .chart {
     padding: 0.5rem 0;
   }
+  .plot {
+    position: relative;
+    height: 2.5rem;
+  }
   svg {
     display: block;
     width: 100%;
-    height: 2.5rem;
+    height: 100%;
+  }
+  path {
+    stroke-dasharray: 1;
+    animation: draw var(--dur-draw) var(--ease-inout) backwards;
+  }
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+  .pt {
+    position: absolute;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: -0.25rem 0 0 -0.25rem;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pop var(--dur-base) var(--ease-out) backwards;
+  }
+  @keyframes pop {
+    from {
+      transform: scale(0);
+      opacity: 0;
+    }
   }
   .cols {
     display: grid;

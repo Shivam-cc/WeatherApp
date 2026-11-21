@@ -1,3 +1,25 @@
+/* Registered so --ink, --accent etc. can transition when the sky changes. */
+@property --ink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --ink-muted {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.7);
+}
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffb38a;
+}
+@property --accent-band {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffb38a;
+}
+
 :root {
   /* Shape */
   --radius-panel: 18px;
@@ -25,6 +47,23 @@
   --dur-base: 320ms;
   --dur-slow: 700ms;
   --dur-scene: 2500ms;
+  --dur-ink: 400ms;
+  --dur-draw: 900ms;
+  --accent-band: #ffb38a;
+
+  transition:
+    --ink var(--dur-ink) ease,
+    --ink-muted var(--dur-ink) ease,
+    --accent var(--dur-ink) ease,
+    --accent-band var(--dur-ink) ease;
+}
+
+/* Surfaces that are always dark (band, dialogs, toasts) keep light text whatever the sky does. */
+.on-dark {
+  --ink: #fff;
+  --ink-muted: rgba(255, 255, 255, 0.7);
+  --accent: var(--accent-band);
+  color: var(--ink);
 }
 
 /* Fluid scale: 16px at 1000px wide, ~26px at 2560px (4K gets 28px max). Everything else is in rem. */
@@ -86,11 +125,69 @@ input:focus-visible {
   white-space: nowrap;
 }
 
+/* Panels stagger in at launch: blur 12 -> 0, y 16 -> 0, opacity 0 -> 1, 60 ms apart.
+   `backwards` (not `both`) so no filter lingers afterwards and the glass blur underneath stays live. */
+.enter {
+  --enter-y: 16px;
+  --enter-blur: 12px;
+  animation: enter var(--dur-slow) var(--ease-out) backwards;
+  animation-delay: calc(var(--delay, 900ms) + var(--i, 0) * 60ms);
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-y));
+    filter: blur(var(--enter-blur));
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  8%,
+  41%,
+  75% {
+    transform: translateX(-6px);
+  }
+  25%,
+  58%,
+  91% {
+    transform: translateX(6px);
+  }
+}
+
+/* Reduced motion keeps cross-fades only; Static switches animation off entirely. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  .enter {
+    --enter-y: 0px;
+    --enter-blur: 0px;
+  }
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+[data-motion='reduced'] .enter {
+  --enter-y: 0px;
+  --enter-blur: 0px;
+}
+[data-motion='reduced'] .strip,
+[data-motion='reduced'] .l,
+[data-motion='reduced'] path,
+[data-motion='reduced'] .pt {
+  animation: none !important;
+  transition: none !important;
+}
+[data-motion='static'] *,
+[data-motion='static'] *::before,
+[data-motion='static'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* Rain beads on the glass; --rain (0..1) is set from the scene's precipitation. */

@@ -16,13 +16,25 @@
   import type { Scene } from './scene/Scene';
   import { app, restore, settings } from './state/weather.svelte';
   import { temp } from './lib/format';
+  import { fly } from 'svelte/transition';
+  import { DUR, flyParams } from './motion/tokens';
 
   let tab = $state(0);
+  let dir = $state(1); // slide direction of the incoming tab content
+  const setTab = (n: number) => {
+    dir = Math.sign(n - tab) || 1;
+    tab = n;
+  };
   let sky: SkyCanvas | undefined = $state();
   let scene: Scene | undefined = $state.raw();
   const w = $derived(app.weather);
 
   restore();
+
+  // CSS hooks for Settings -> Motion (Full / Reduced / Static).
+  $effect(() => {
+    document.documentElement.dataset.motion = settings.motion;
+  });
 </script>
 
 <SkyCanvas bind:this={sky} onready={(s) => (scene = s)} />
@@ -31,17 +43,21 @@
 <main class="app" class:loading={app.loading}>
   {#if w}
     <section class="top">
-      <HeroPanel />
-      <TimePanel />
+      <div class="enter" style="--i: 0"><HeroPanel /></div>
+      <div class="enter" style="--i: 1"><TimePanel /></div>
     </section>
-    <section class="band">
-      <div class="left">
-        <Tabs bind:active={tab} />
+    <section class="band on-dark">
+      <div class="left enter" style="--i: 2">
+        <Tabs active={tab} onselect={setTab} />
         <div id="panel" role="tabpanel" aria-labelledby="tab-{tab}">
-          {#if tab === 0}<MetricsGrid />{:else if tab === 1}<HourlyTimeline />{:else}<DailyChart />{/if}
+          {#key tab}
+            <div in:fly={flyParams(dir * 12, 0, DUR.base)}>
+              {#if tab === 0}<MetricsGrid />{:else if tab === 1}<HourlyTimeline />{:else}<DailyChart />{/if}
+            </div>
+          {/key}
         </div>
       </div>
-      <div class="right"><DayPartCards /></div>
+      <div class="right enter" style="--i: 3"><DayPartCards /></div>
     </section>
   {:else}
     <EmptyState />

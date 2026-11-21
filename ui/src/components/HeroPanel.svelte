@@ -1,17 +1,26 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import { app, settings } from '../state/weather.svelte';
+  import Roll from './Roll.svelte';
+  import LetterFade from './LetterFade.svelte';
+  import { DUR } from '../motion/tokens';
   import { skyIcon, temp } from '../lib/format';
 
   const w = $derived(app.weather!);
+  // The unit toggle rolls a little faster than a new city's numbers; the toggle sets this in the same tick as the unit.
+  let dur = $state<number>(DUR.roll);
+  $effect.pre(() => {
+    app.weather;
+    dur = DUR.roll;
+  });
 </script>
 
 <section class="glass drops hero" aria-label="Current weather">
   <div class="row">
-    <span class="temp">{temp(w.current.tempC, settings.temp)}</span>
+    <span class="temp"><Roll value={temp(w.current.tempC, settings.temp)} {dur} /></span>
     <div class="toggle" role="group" aria-label="Temperature unit">
       {#each ['C', 'F'] as const as u}
-        <button aria-pressed={settings.temp === u} onclick={() => (settings.temp = u)}>{u}</button>
+        <button aria-pressed={settings.temp === u} onclick={() => ((dur = DUR.unit), (settings.temp = u))}>{u}</button>
       {/each}
     </div>
     <div class="cond">
@@ -19,7 +28,7 @@
       <span>{w.current.conditionText}</span>
     </div>
   </div>
-  <h1>{w.location.name}</h1>
+  <h1><LetterFade text={w.location.name} /></h1>
   <p class="muted region">{[w.location.region, w.location.country].filter(Boolean).join(', ')}</p>
   <button class="change" onclick={() => (app.paletteOpen = true)}>
     <Icon name="pin" size={1} /> Change location

@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { fade, fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
+  import { flyParams } from '../motion/tokens';
   import { app, dismissToast } from '../state/weather.svelte';
 </script>
 
 <div class="toasts" role="alert" aria-live="assertive">
   {#each app.toasts as t (t.id)}
-    <div class="glass toast">
+    <div class="glass toast on-dark" in:fly={flyParams(0, 24)} out:fade={{ duration: 160 }}>
       <span>{t.text}</span>
       <button aria-label="Dismiss" onclick={() => dismissToast(t.id)}><Icon name="close" size={1} /></button>
     </div>

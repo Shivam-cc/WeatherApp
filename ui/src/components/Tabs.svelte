@@ -1,18 +1,19 @@
 <script lang="ts">
   const TABS = ['Today’s Forecast', 'Hourly Forecast', 'Daily Forecast'] as const;
-  let { active = $bindable(0) }: { active: number } = $props();
+  let { active, onselect }: { active: number; onselect: (n: number) => void } = $props();
 
   function key(e: KeyboardEvent) {
     const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
     if (!d) return;
-    active = (active + d + TABS.length) % TABS.length;
-    (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role=tab]')[active].focus();
+    const next = (active + d + TABS.length) % TABS.length;
+    onselect(next);
+    (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role=tab]')[next].focus();
   }
 </script>
 
 <div class="tabs" role="tablist" aria-label="Forecast view" tabindex="-1" onkeydown={key}>
   {#each TABS as t, i}
-    <button role="tab" id="tab-{i}" aria-selected={active === i} aria-controls="panel" tabindex={active === i ? 0 : -1} onclick={() => (active = i)}>{t}</button>
+    <button role="tab" id="tab-{i}" aria-selected={active === i} aria-controls="panel" tabindex={active === i ? 0 : -1} onclick={() => onselect(i)}>{t}</button>
   {/each}
   <span class="bar" style="transform: translateX({active * 100}%)"></span>
 </div>

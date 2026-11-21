@@ -21,6 +21,9 @@ uniform float uMoonPhase;
 uniform float uOctaves;
 uniform float uLayers;
 uniform float uPost;     // 0 off, 1 bloom only, 2 bloom + grain + vignette
+// Launch intro
+uniform float uFade;     // 0 black .. 1
+uniform float uRise;     // skyline rises 20px into place
 
 out vec4 outColor;
 
@@ -246,15 +249,16 @@ void main() {
   // Layers 3-4: hazy far skyline, dark near skyline with warm windows at night.
   vec3 deep = vec3(0.12, 0.16, 0.26) * (0.4 + 0.6 * dayLight);
   float fx = uv.x + uParallax.x * 0.004;
+  float lift = (1.0 - uRise) * 0.032;
   float fid = floor(fx * 38.0);
   float fh = HORIZON + 0.05 + 0.10 * hash11(fid * 1.3) + 0.06 * step(0.8, hash11(fid * 7.1));
   vec3 farCol = mix(mix(hor * 0.7, deep, 0.55), hor, uFog * 0.7);
-  col = mix(col, farCol, step(uv.y, fh));
+  col = mix(col, farCol, step(uv.y + lift, fh));
 
   float nx = uv.x + uParallax.x * 0.012;
   float nid = floor(nx * 22.0);
   float nh = HORIZON + 0.02 + 0.12 * hash11(nid * 2.7 + 11.0) + 0.05 * step(0.85, hash11(nid * 5.3));
-  float inNear = step(uv.y, nh);
+  float inNear = step(uv.y + lift, nh);
   vec3 nearCol = mix(vec3(0.025, 0.03, 0.045) + hor * 0.05 * dayLight, hor * 0.5, uFog * 0.5);
   vec2 wg = vec2(nx * 22.0 * 5.0, uv.y * 60.0);
   vec2 wc = floor(wg);
@@ -304,5 +308,5 @@ void main() {
     col += (hash21(gl_FragCoord.xy + fract(uTime) * 100.0) - 0.5) * 0.035;
   }
 
-  outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  outColor = vec4(clamp(col, 0.0, 1.0) * uFade, 1.0);
 }

@@ -20,7 +20,7 @@
 {#if app.settingsOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="scrim" onclick={() => (app.settingsOpen = false)}></div>
-  <div class="glass sheet" role="dialog" tabindex="-1" aria-modal="true" aria-label="Settings" bind:this={sheet} onkeydown={(e) => e.key === 'Escape' && (app.settingsOpen = false)}>
+  <div class="glass sheet on-dark" role="dialog" tabindex="-1" aria-modal="true" aria-label="Settings" bind:this={sheet} onkeydown={(e) => e.key === 'Escape' && (app.settingsOpen = false)}>
     <header>
       <h2>Settings</h2>
       <button aria-label="Close settings" onclick={() => (app.settingsOpen = false)}><Icon name="close" /></button>

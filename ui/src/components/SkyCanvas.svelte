@@ -3,6 +3,7 @@
   import { Scene } from '../scene/Scene';
   import { IDLE, presetTargets, targetsFor } from '../scene/presets';
   import { devParams } from '../scene/devParams';
+  import { inkFor } from '../scene/ink';
 
   let { onready }: { onready?: (s: Scene) => void } = $props();
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -41,6 +42,25 @@
       s.dispose();
       scene = undefined;
     };
+  });
+
+  // Text colours follow the sky as it tweens (4 Hz is plenty; the CSS transition smooths the rest).
+  $effect(() => {
+    if (!scene) return;
+    const s = scene;
+    const root = document.documentElement.style;
+    let last = '';
+    const id = setInterval(() => {
+      const i = inkFor(s.tween.current);
+      const key = i.ink + i.accent + i.accentBand;
+      if (key === last) return;
+      last = key;
+      root.setProperty('--ink', i.ink);
+      root.setProperty('--ink-muted', i.muted);
+      root.setProperty('--accent', i.accent);
+      root.setProperty('--accent-band', i.accentBand);
+    }, 250);
+    return () => clearInterval(id);
   });
 
   // New data → tween to it; also refresh the sun position every minute.

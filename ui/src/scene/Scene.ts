@@ -3,6 +3,7 @@ import fragSrc from './shaders/sky.frag.glsl?raw';
 import { DEFAULTS, TWEEN_KEYS, UniformTween, type TweenKey } from './uniforms';
 import { QualityController, TIERS, type Tier, type TierName } from './quality';
 import { Lightning } from './lightning';
+import { introProgress } from './intro';
 
 type Targets = Partial<Record<TweenKey, number>>;
 export type QualitySetting = 'auto' | 'high' | 'battery';
@@ -15,7 +16,7 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string) {
   return s;
 }
 
-const NAMES = ['uTime', 'uSeed', 'uParallax', 'uDrift', 'uRes', 'uBolt', 'uOctaves', 'uLayers', 'uPost'];
+const NAMES = ['uTime', 'uSeed', 'uParallax', 'uDrift', 'uRes', 'uBolt', 'uOctaves', 'uLayers', 'uPost', 'uFade', 'uRise'];
 
 /** Full-screen WebGL2 sky. Renders only while something is moving and the window is visible. */
 export class Scene {
@@ -39,6 +40,10 @@ export class Scene {
   private _animate = true;
   private auto: QualityController | null = new QualityController('high');
   private lightning: Lightning;
+  // Launch intro: -1 = not started, -2 = finished or skipped.
+  private introStart = -1;
+  private fade = 1;
+  private rise = 1;
 
   /**
    * @param seed all randomness (lightning schedule, particle hashes) derives from it
@@ -50,6 +55,7 @@ export class Scene {
     private fixedClock?: number,
   ) {
     this.time = fixedClock ?? 0;
+    if (fixedClock !== undefined) this.introStart = -2; // reproducible frames skip the intro
     this.lightning = new Lightning(seed);
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
     if (!gl) throw new Error('WebGL2 is not available');
@@ -160,7 +166,18 @@ export class Scene {
     const dt = Math.min((now - this.lastRender) / 1000, 0.1);
     this.lastRender = now;
 
-    const moving = this.tween.update(now);
+    let moving = this.tween.update(now);
+    if (this.introStart !== -2) {
+      if (!this._animate) this.introStart = -2;
+      else {
+        if (this.introStart === -1) this.introStart = now;
+        const p = introProgress(now - this.introStart);
+        [this.fade, this.rise] = [p.fade, p.rise];
+        if (p.done) this.introStart = -2;
+        else moving = true;
+      }
+      if (this.introStart === -2) [this.fade, this.rise] = [1, 1];
+    }
     const u = this.tween.current;
     let parMoving = false;
     if (this._animate) {
@@ -194,6 +211,8 @@ export class Scene {
     gl.uniform1f(loc.get('uOctaves')!, tier.octaves);
     gl.uniform1f(loc.get('uLayers')!, tier.layers);
     gl.uniform1f(loc.get('uPost')!, tier.post);
+    gl.uniform1f(loc.get('uFade')!, this.fade);
+    gl.uniform1f(loc.get('uRise')!, this.rise);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 }

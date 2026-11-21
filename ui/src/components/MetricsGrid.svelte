@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import Roll from './Roll.svelte';
   import { app, settings } from '../state/weather.svelte';
   import { speed, temp, visibility } from '../lib/format';
 
@@ -20,7 +21,7 @@
       <Icon name={icon} size={1.5} />
       <div>
         <dt class="muted">{label}</dt>
-        <dd>{value}</dd>
+        <dd><Roll {value} countUp /></dd>
       </div>
     </div>
   {/each}

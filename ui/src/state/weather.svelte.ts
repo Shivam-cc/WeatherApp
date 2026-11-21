@@ -48,15 +48,17 @@ export function dismissToast(id: number) {
   app.toasts = app.toasts.filter((t) => t.id !== id);
 }
 
-async function run(p: Promise<Weather>) {
+async function run(p: Promise<Weather>): Promise<boolean> {
   app.loading = true;
   try {
     const w = await p;
     app.weather = w;
     const l = w.location;
     app.recents = [l, ...app.recents.filter((r) => r.lat !== l.lat || r.lon !== l.lon)].slice(0, 5);
+    return true;
   } catch (e) {
     toast(String(e));
+    return false;
   } finally {
     app.loading = false;
   }
