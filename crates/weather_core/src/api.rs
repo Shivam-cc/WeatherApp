@@ -9,7 +9,11 @@ pub fn fetch(city: &str) -> Res<Weather> {
     if city.is_empty() {
         return Err("enter a city name".into());
     }
-    let location = search(city, 1)?.into_iter().next().ok_or("city not found")?;
+    forecast(search(city, 1)?.into_iter().next().ok_or("city not found")?)
+}
+
+/// Forecast for an already-resolved place (e.g. a picked search suggestion).
+pub fn forecast(location: Location) -> Res<Weather> {
     let (lat, lon) = (location.lat.to_string(), location.lon.to_string());
     let wx = get(
         "https://api.open-meteo.com/v1/forecast",

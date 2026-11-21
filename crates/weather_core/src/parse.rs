@@ -55,7 +55,7 @@ pub fn parse_weather(json: &str, location: Location) -> Res<Weather> {
         }
         // Ties go to the earliest code seen.
         let weather_code = counts.iter().fold(counts[0], |b, &e| if e.1 > b.1 { e } else { b }).0;
-        Ok(DayPart { temp_c: hs.iter().map(|x| x.temp_c).sum::<f64>() / hs.len() as f64, weather_code })
+        Ok(DayPart { temp_c: hs.iter().map(|x| x.temp_c).sum::<f64>() / hs.len() as f64, weather_code, sky: sky(weather_code) })
     };
     let day_parts = DayParts { morning: part(6, 11)?, afternoon: part(12, 17)?, evening: part(18, 22)? };
 

@@ -1,12 +1,12 @@
 use crate::sky::Sky;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 pub type Res<T> = Result<T, Box<dyn std::error::Error>>;
 
 // ts-rs maps i64 to bigint; WMO codes are small, so they are exported as plain numbers.
 
-#[derive(Debug, PartialEq, Serialize, TS)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct Location {
@@ -73,6 +73,7 @@ pub struct DayPart {
     pub temp_c: f64,
     #[ts(type = "number")]
     pub weather_code: i64,
+    pub sky: Sky,
 }
 
 #[derive(Debug, PartialEq, Serialize, TS)]

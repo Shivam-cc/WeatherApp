@@ -1,0 +1,93 @@
+:root {
+  /* Shape */
+  --radius-panel: 18px;
+  --radius-card: 14px;
+
+  /* Surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.25);
+  --band-bg: rgba(10, 14, 22, 0.72);
+  --blur: 24px;
+
+  /* Ink (updated live from sky luminance in Phase 7) */
+  --ink: #ffffff;
+  --ink-muted: rgba(255, 255, 255, 0.7);
+  --accent: #ffb38a;
+
+  /* Type */
+  --font: 'Manrope Variable', 'Manrope', system-ui, sans-serif;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 160ms;
+  --dur-base: 320ms;
+  --dur-slow: 700ms;
+  --dur-scene: 2500ms;
+}
+
+/* Fluid scale: 16px at 1000px wide, ~26px at 2560px (4K gets 28px max). Everything else is in rem. */
+html {
+  font-size: clamp(16px, 0.641vw + 9.6px, 28px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: #10131c;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 20px 50px rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-panel);
+}
+
+.muted {
+  color: var(--ink-muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

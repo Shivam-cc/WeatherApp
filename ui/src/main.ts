@@ -1,3 +1,5 @@
+import '@fontsource-variable/manrope';
+import './styles/tokens.css';
 import { mount } from 'svelte';
 import App from './App.svelte';
 

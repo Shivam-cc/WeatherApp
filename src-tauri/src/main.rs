@@ -15,13 +15,18 @@ async fn get_weather(city: String) -> Result<Weather, String> {
 }
 
 #[tauri::command]
+async fn get_weather_at(location: Location) -> Result<Weather, String> {
+    blocking(move || weather_core::forecast(location)).await
+}
+
+#[tauri::command]
 async fn search_city(query: String) -> Result<Vec<Location>, String> {
     blocking(move || weather_core::search(&query, 5)).await
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_weather, search_city])
+        .invoke_handler(tauri::generate_handler![get_weather, get_weather_at, search_city])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
