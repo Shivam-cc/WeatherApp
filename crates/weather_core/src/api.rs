@@ -1,5 +1,5 @@
-use crate::parse::{parse_location, parse_weather};
-use crate::types::{Res, Weather};
+use crate::parse::{parse_location, parse_locations, parse_weather};
+use crate::types::{Location, Res, Weather};
 
 fn get(url: &str, query: &[(&str, &str)]) -> Res<String> {
     Ok(ureq::get(url).query_pairs(query.iter().copied()).call()?.body_mut().read_to_string()?)
@@ -24,4 +24,12 @@ pub fn fetch(city: &str) -> Res<Weather> {
         ],
     )?;
     parse_weather(&wx, place)
+}
+
+/// City suggestions for the search box.
+pub fn search(query: &str, count: u8) -> Res<Vec<Location>> {
+    if query.trim().is_empty() {
+        return Ok(vec![]);
+    }
+    parse_locations(&get("https://geocoding-api.open-meteo.com/v1/search", &[("name", query.trim()), ("count", &count.to_string())])?)
 }

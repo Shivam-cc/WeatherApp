@@ -1,4 +1,5 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
 pub enum Sky {
     Clear,
     Cloudy,

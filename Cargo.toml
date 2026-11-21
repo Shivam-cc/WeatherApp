@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/weather_core", "legacy-egui"]
+members = ["crates/weather_core", "legacy-egui", "src-tauri"]
 resolver = "3"
 
 [workspace.package]

@@ -39,3 +39,11 @@ fn maps_codes_to_sky() {
         assert_eq!(sky(code), want, "code {code}");
     }
 }
+
+#[test]
+fn parses_location_list() {
+    let json = r#"{"results":[{"name":"Paris","admin1":"Ile-de-France","country":"France","latitude":48.8,"longitude":2.3,"timezone":"Europe/Paris"},{"name":"bad"}]}"#;
+    let v = parse_locations(json).unwrap();
+    assert_eq!((v.len(), v[0].admin1.as_deref()), (1, Some("Ile-de-France")));
+    assert!(parse_locations("{}").unwrap().is_empty());
+}
