@@ -19,7 +19,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": ["nsis"],
     "icon": ["icons/icon.ico", "icons/icon.png"],
     "publisher": "Shivam Bhaskar",
     "copyright": "Copyright (c) 2026 Shivam Bhaskar",
