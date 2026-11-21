@@ -42,7 +42,8 @@ body {
   margin: 0;
   font-family: var(--font);
   color: var(--ink);
-  background: #10131c;
+  /* Fallback if WebGL2 is unavailable; the canvas covers it otherwise. */
+  background: linear-gradient(180deg, #2b3a67 0%, #8a5a83 55%, #ffb38a 100%) fixed;
   overflow: hidden;
   font-variant-numeric: tabular-nums;
 }

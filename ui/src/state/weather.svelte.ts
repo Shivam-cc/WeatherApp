@@ -44,7 +44,9 @@ export function toast(text: string) {
   app.toasts.push({ id, text });
   setTimeout(() => dismissToast(id), 4000);
 }
-export const dismissToast = (id: number) => (app.toasts = app.toasts.filter((t) => t.id !== id));
+export function dismissToast(id: number) {
+  app.toasts = app.toasts.filter((t) => t.id !== id);
+}
 
 async function run(p: Promise<Weather>) {
   app.loading = true;

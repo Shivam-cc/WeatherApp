@@ -11,14 +11,22 @@
   import EmptyState from './components/EmptyState.svelte';
   import LoadingState from './components/LoadingState.svelte';
   import Toast from './components/Toast.svelte';
+  import SkyCanvas from './components/SkyCanvas.svelte';
+  import SceneLab from './dev/SceneLab.svelte';
+  import type { Scene } from './scene/Scene';
   import { app, restore, settings } from './state/weather.svelte';
   import { temp } from './lib/format';
 
   let tab = $state(0);
+  let sky: SkyCanvas | undefined = $state();
+  let scene: Scene | undefined = $state.raw();
   const w = $derived(app.weather);
 
   restore();
 </script>
+
+<SkyCanvas bind:this={sky} onready={(s) => (scene = s)} />
+{#if import.meta.env.DEV && scene}<SceneLab {scene} reset={() => sky?.applyData()} />{/if}
 
 <main class="app" class:loading={app.loading}>
   {#if w}
@@ -53,8 +61,6 @@
     height: 100vh;
     display: grid;
     grid-template-rows: 62fr 38fr;
-    /* Placeholder sky until the WebGL scene lands in Phase 5. */
-    background: linear-gradient(180deg, #2b3a67 0%, #8a5a83 55%, #ffb38a 100%);
     transition: filter var(--dur-base);
   }
   .app.loading {
