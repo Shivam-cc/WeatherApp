@@ -71,6 +71,7 @@ test('nonsense search shows the friendly not-found toast', async () => {
 });
 
 test('the CSP is enforced (a foreign origin is blocked by connect-src)', async ({}, testInfo) => {
+  const before = problems.length;
   // Observed: the dev window (pages served by Vite) raises no violation for a foreign origin, so only the release build proves the CSP.
   test.skip(testInfo.project.metadata.mode === 'dev', 'CSP is not enforced for the Vite-served dev window');
   const directive = await page.evaluate(
@@ -82,7 +83,8 @@ test('the CSP is enforced (a foreign origin is blocked by connect-src)', async (
       }),
   );
   expect(directive).toMatch(/^connect-src/);
-  await page.evaluate(() => (window as any).__csp.splice(0)); // provoked on purpose
+  await page.evaluate(() => (window as any).__csp.splice(0)); // provoked on purpose, so drop its console noise too
+  problems.length = before;
 });
 
 test('no console errors, page errors or CSP violations during the whole run', async () => {

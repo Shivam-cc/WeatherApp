@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Weather",
-  "version": "0.1.0",
-  "identifier": "dev.shivam.weather",
+  "version": "1.0.0",
+  "identifier": "com.shivambhaskar.weather",
   "build": {
     "beforeDevCommand": "npm --prefix ui run dev",
     "devUrl": "http://localhost:1420",
@@ -17,5 +17,15 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost"
     }
   },
-  "bundle": { "active": true, "targets": "all", "icon": ["icons/icon.ico", "icons/icon.png"] }
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "publisher": "Shivam Bhaskar",
+    "copyright": "Copyright (c) 2026 Shivam Bhaskar",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "shortDescription": "A weather app with a living sky.",
+    "longDescription": "Weather shows current conditions and forecasts from Open-Meteo under a real-time WebGL sky that follows the sun, moon and weather."
+  }
 }
