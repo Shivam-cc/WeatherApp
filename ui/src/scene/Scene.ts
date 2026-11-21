@@ -38,6 +38,7 @@ export class Scene {
   private parTarget = [0, 0];
   private ro: ResizeObserver;
   private _animate = true;
+  private paused = false; // set when the native window is minimized
   private auto: QualityController | null = new QualityController('high');
   private lightning: Lightning;
   // Launch intro: -1 = not started, -2 = finished or skipped.
@@ -125,6 +126,15 @@ export class Scene {
     this.run();
   }
 
+  /** WebView2 does not report a minimized window as hidden, so the shell tells us. */
+  setPaused(v: boolean) {
+    this.paused = v;
+    if (v) {
+      cancelAnimationFrame(this.raf);
+      this.raf = 0;
+    } else this.run();
+  }
+
   private onVisibility = () => {
     if (document.hidden) {
       cancelAnimationFrame(this.raf);
@@ -144,7 +154,7 @@ export class Scene {
   }
 
   private run() {
-    if (this.raf || document.hidden) return;
+    if (this.raf || document.hidden || this.paused) return;
     this.lastRaf = this.lastRender = performance.now();
     this.raf = requestAnimationFrame(this.frame);
   }
@@ -172,11 +182,12 @@ export class Scene {
       else {
         if (this.introStart === -1) this.introStart = now;
         const p = introProgress(now - this.introStart);
-        [this.fade, this.rise] = [p.fade, p.rise];
+        this.fade = p.fade;
+        this.rise = p.rise;
         if (p.done) this.introStart = -2;
         else moving = true;
       }
-      if (this.introStart === -2) [this.fade, this.rise] = [1, 1];
+      if (this.introStart === -2) this.fade = this.rise = 1;
     }
     const u = this.tween.current;
     let parMoving = false;

@@ -40,7 +40,7 @@
 <SkyCanvas bind:this={sky} onready={(s) => (scene = s)} />
 {#if import.meta.env.DEV && scene}<SceneLab {scene} reset={() => sky?.applyData()} />{/if}
 
-<main class="app" class:loading={app.loading}>
+<main class="app" class:loading={app.loading} inert={app.paletteOpen || app.settingsOpen}>
   {#if w}
     <section class="top">
       <div class="enter" style="--i: 0"><HeroPanel /></div>

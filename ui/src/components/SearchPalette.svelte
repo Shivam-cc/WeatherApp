@@ -4,6 +4,7 @@
   import { app, loadCity, loadLocation, toast } from '../state/weather.svelte';
   import { searchCity } from '../lib/api';
   import { DUR } from '../motion/tokens';
+  import { restoreFocus } from '../lib/focus';
   import type { Location } from '../bindings/Location';
 
   let q = $state('');
@@ -34,7 +35,7 @@
   });
 
   $effect(() => {
-    if (!app.paletteOpen) return;
+    if (!app.paletteOpen) return restoreFocus();
     const failed = retry !== ''; // plain variable: reading `shake` here would make this effect re-run
     q = retry;
     retry = '';

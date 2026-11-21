@@ -14,6 +14,11 @@
   inherits: true;
   initial-value: #ffb38a;
 }
+@property --glass-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(8, 12, 20, 0.4);
+}
 @property --accent-band {
   syntax: '<color>';
   inherits: true;
@@ -26,7 +31,7 @@
   --radius-card: 14px;
 
   /* Surfaces */
-  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(8, 12, 20, 0.4); /* adaptive: SkyCanvas swaps it with the ink */
   --glass-border: rgba(255, 255, 255, 0.18);
   --glass-highlight: rgba(255, 255, 255, 0.25);
   --band-bg: rgba(10, 14, 22, 0.72);
@@ -55,7 +60,8 @@
     --ink var(--dur-ink) ease,
     --ink-muted var(--dur-ink) ease,
     --accent var(--dur-ink) ease,
-    --accent-band var(--dur-ink) ease;
+    --accent-band var(--dur-ink) ease,
+    --glass-bg var(--dur-ink) ease;
 }
 
 /* Surfaces that are always dark (band, dialogs, toasts) keep light text whatever the sky does. */
@@ -63,6 +69,7 @@
   --ink: #fff;
   --ink-muted: rgba(255, 255, 255, 0.7);
   --accent: var(--accent-band);
+  --glass-bg: rgba(255, 255, 255, 0.1);
   color: var(--ink);
 }
 

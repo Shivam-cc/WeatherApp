@@ -20,7 +20,7 @@
     <span class="temp"><Roll value={temp(w.current.tempC, settings.temp)} {dur} /></span>
     <div class="toggle" role="group" aria-label="Temperature unit">
       {#each ['C', 'F'] as const as u}
-        <button aria-pressed={settings.temp === u} onclick={() => ((dur = DUR.unit), (settings.temp = u))}>{u}</button>
+        <button aria-label={u === 'C' ? 'Celsius' : 'Fahrenheit'} aria-pressed={settings.temp === u} onclick={() => ((dur = DUR.unit), (settings.temp = u))}>{u}</button>
       {/each}
     </div>
     <div class="cond">

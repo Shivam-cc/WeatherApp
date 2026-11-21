@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import { app, settings } from '../state/weather.svelte';
+  import { restoreFocus } from '../lib/focus';
 
   // [label, key, [value, text][]]
   const groups = [
@@ -14,6 +15,7 @@
   let sheet: HTMLElement | undefined = $state();
   $effect(() => {
     if (app.settingsOpen) sheet?.querySelector('button')?.focus();
+    else restoreFocus();
   });
 </script>
 

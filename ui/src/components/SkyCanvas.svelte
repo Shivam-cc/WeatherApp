@@ -37,7 +37,21 @@
     onready?.(s);
     const move = (e: PointerEvent) => s.setParallax((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
     window.addEventListener('pointermove', move);
+    // Inside Tauri, also pause while the native window is minimized (a minimized window resizes to 0x0).
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    if ('__TAURI_INTERNALS__' in window) {
+      import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
+        const win = getCurrentWindow();
+        const off = await win.onResized(({ payload }) => s.setPaused(payload.width === 0 || payload.height === 0));
+        if (disposed) off();
+        else unlisten = off;
+        s.setPaused(await win.isMinimized());
+      });
+    }
     return () => {
+      disposed = true;
+      unlisten?.();
       window.removeEventListener('pointermove', move);
       s.dispose();
       scene = undefined;
@@ -52,13 +66,14 @@
     let last = '';
     const id = setInterval(() => {
       const i = inkFor(s.tween.current);
-      const key = i.ink + i.accent + i.accentBand;
+      const key = i.ink + i.accent + i.accentBand + i.glass;
       if (key === last) return;
       last = key;
       root.setProperty('--ink', i.ink);
       root.setProperty('--ink-muted', i.muted);
       root.setProperty('--accent', i.accent);
       root.setProperty('--accent-band', i.accentBand);
+      root.setProperty('--glass-bg', i.glass);
     }, 250);
     return () => clearInterval(id);
   });
