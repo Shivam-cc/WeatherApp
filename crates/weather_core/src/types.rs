@@ -2,7 +2,49 @@ use crate::sky::Sky;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-pub type Res<T> = Result<T, Box<dyn std::error::Error>>;
+pub type Res<T> = Result<T, Error>;
+
+/// Every failure carries the exact message shown to the user; raw transport text never leaves the crate.
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    EmptyQuery,
+    NotFound,
+    Timeout,
+    Offline,
+    BadResponse,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Error::EmptyQuery => "Enter a city name.",
+            Error::NotFound => "City not found. Check the spelling and try again.",
+            Error::Timeout => "The weather service took too long to respond. Try again.",
+            Error::Offline => "You appear to be offline.",
+            Error::BadResponse => "Unexpected response from the weather service.",
+        })
+    }
+}
+
+impl std::error::Error for Error {}
+
+impl From<ureq::Error> for Error {
+    fn from(e: ureq::Error) -> Self {
+        use std::io::ErrorKind::{TimedOut, WouldBlock};
+        match e {
+            ureq::Error::Timeout(_) => Error::Timeout,
+            ureq::Error::Io(e) if matches!(e.kind(), TimedOut | WouldBlock) => Error::Timeout,
+            ureq::Error::Io(_) | ureq::Error::HostNotFound | ureq::Error::ConnectionFailed => Error::Offline,
+            _ => Error::BadResponse,
+        }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(_: serde_json::Error) -> Self {
+        Error::BadResponse
+    }
+}
 
 // ts-rs maps i64 to bigint; WMO codes are small, so they are exported as plain numbers.
 

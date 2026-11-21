@@ -1,10 +1,10 @@
 use crate::sky::{condition_text, sky};
-use crate::types::{Current, Day, DayPart, DayParts, Hour, Location, Res, Today, Weather};
+use crate::types::{Error, Current, Day, DayPart, DayParts, Hour, Location, Res, Today, Weather};
 use serde_json::Value;
 
 pub fn parse_weather(json: &str, location: Location) -> Res<Weather> {
     let v: Value = serde_json::from_str(json)?;
-    let bad = || "unexpected weather response";
+    let bad = || Error::BadResponse;
     let (c, d, h) = (&v["current"], &v["daily"], &v["hourly"]);
     let num = |x: &Value| x.as_f64().ok_or_else(bad);
     let text = |x: &Value| x.as_str().map(str::to_owned).ok_or_else(bad);
@@ -44,7 +44,7 @@ pub fn parse_weather(json: &str, location: Location) -> Res<Weather> {
             .filter(|x| x.time.starts_with(&first) && x.time.get(11..13).and_then(|t| t.parse().ok()).is_some_and(|t| (from..=to).contains(&t)))
             .collect();
         if hs.is_empty() {
-            return Err(bad().into());
+            return Err(bad());
         }
         let mut counts: Vec<(i64, usize)> = vec![];
         for x in &hs {
