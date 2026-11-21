@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+- The bottom band clipped its third metric row (UV Index, Dew Point) in the default window. The real window is 834x517 CSS px at 120% DPI, below the 1000x620 the layout assumed. The band now sizes to its content, the page scale follows the smaller of width and height (floor 12px), and short or wide windows no longer clip either.
+- The loading state no longer shows a floating shimmer pill. Pressing Enter keeps the search palette open with a spinner and "Loading <city>...", Esc cancels, and a refresh with the palette closed shows a 2px accent line at the top of the window. Respects Reduced and Static motion; adds `aria-busy` and a polite live region.
+- Focus rings are one style everywhere: 2px accent, 2px offset, following each element's radius, for keyboard focus only.
+
+### Changed
+- Release builds are stripped and use LTO with one codegen unit.
+- `ui/package.json` version now matches the app (1.0.1).
+
+### Tests
+- New layout audit across 7 viewports and all three tabs, and loading-state tests with a deferred mock (snapshot, no overlap, cancel, success, failure).
+- Visual baselines regenerated for the new band layout.
+
 ## 1.0.0
 
 First release of the Tauri version. It replaces the egui app, which stays in `legacy-egui`.

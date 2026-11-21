@@ -3016,7 +3016,7 @@ dependencies = [
 
 [[package]]
 name = "legacy-egui"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "eframe",
  "weather_core",
@@ -6474,7 +6474,7 @@ dependencies = [
 
 [[package]]
 name = "weather-app"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "tauri",
  "tauri-build",
@@ -6483,7 +6483,7 @@ dependencies = [
 
 [[package]]
 name = "weather_core"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "serde",
  "serde_json",

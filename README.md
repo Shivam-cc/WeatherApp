@@ -50,7 +50,7 @@ npm run tauri dev       # run from the repo root
 npm run tauri build     # makes the NSIS installer
 ```
 
-The installer is written to `target/release/bundle/nsis/Weather_1.0.0_x64-setup.exe`. Dev mode uses port 1420; if `tauri dev` says it is in use, stop whatever is listening there.
+The installer is written to `target/release/bundle/nsis/Weather_1.0.1_x64-setup.exe`. Dev mode uses port 1420; if `tauri dev` says it is in use, stop whatever is listening there.
 
 ## Install notes
 
