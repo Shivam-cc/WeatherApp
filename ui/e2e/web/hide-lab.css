@@ -1,0 +1,2 @@
+/* The dev-only SceneLab shows a live fps counter, which would make every snapshot differ. */
+.lab { display: none !important; }

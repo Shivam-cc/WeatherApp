@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import { app, settings } from '../state/weather.svelte';
-  import { restoreFocus } from '../lib/focus';
+  import { restoreFocus, trapTab } from '../lib/focus';
 
   // [label, key, [value, text][]]
   const groups = [
@@ -22,7 +22,7 @@
 {#if app.settingsOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="scrim" onclick={() => (app.settingsOpen = false)}></div>
-  <div class="glass sheet on-dark" role="dialog" tabindex="-1" aria-modal="true" aria-label="Settings" bind:this={sheet} onkeydown={(e) => e.key === 'Escape' && (app.settingsOpen = false)}>
+  <div class="glass sheet on-dark" role="dialog" tabindex="-1" aria-modal="true" aria-label="Settings" bind:this={sheet} onkeydown={(e) => (e.key === 'Escape' ? (app.settingsOpen = false) : sheet && trapTab(e, sheet))}>
     <header>
       <h2>Settings</h2>
       <button aria-label="Close settings" onclick={() => (app.settingsOpen = false)}><Icon name="close" /></button>

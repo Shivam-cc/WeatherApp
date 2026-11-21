@@ -8,9 +8,14 @@
     "build": "vite build",
     "test": "vitest run",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:e2e:web": "playwright test --project=web",
+    "test:e2e:tauri": "playwright test --project=tauri-dev",
+    "test:e2e:release": "playwright test --project=tauri-release"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tauri-apps/cli": "^2.12.6",
     "@tsconfig/svelte": "^5.0.9",

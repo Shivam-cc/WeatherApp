@@ -61,6 +61,7 @@
 
   function key(e: KeyboardEvent) {
     if (e.key === 'Escape') app.paletteOpen = false;
+    else if (e.key === 'Tab') e.preventDefault(); // the field is the only stop, so keep focus on it
     else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (items.length) idx = (idx + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
@@ -101,11 +102,10 @@
     </div>
     <ul id="results" role="listbox" aria-label={q.trim() ? 'Suggestions' : 'Recent cities'}>
       {#each items as l, i}
-        <li id="r{i}" role="option" aria-selected={i === idx}>
-          <button tabindex="-1" onmouseenter={() => (idx = i)} onclick={() => pick(l)}>
-            <b>{l.name}</b>
-            <span class="muted">{[l.region, l.country].filter(Boolean).join(', ')}</span>
-          </button>
+        <!-- svelte-ignore a11y_click_events_have_key_events (keys are handled on the combobox input) -->
+        <li id="r{i}" role="option" aria-selected={i === idx} onmouseenter={() => (idx = i)} onclick={() => pick(l)}>
+          <b>{l.name}</b>
+          <span class="muted">{[l.region, l.country].filter(Boolean).join(', ')}</span>
         </li>
       {/each}
     </ul>
@@ -153,15 +153,15 @@
     margin: 0;
     padding: 0.4rem;
   }
-  li button {
+  li {
+    cursor: pointer;
     display: flex;
     justify-content: space-between;
-    width: 100%;
     padding: 0.6rem 0.75rem;
     border-radius: 0.6rem;
     font-size: 0.9rem;
   }
-  li[aria-selected='true'] button {
+  li[aria-selected='true'] {
     background: var(--glass-border);
   }
 </style>

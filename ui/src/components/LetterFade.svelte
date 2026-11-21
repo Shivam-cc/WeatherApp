@@ -4,7 +4,7 @@
 </script>
 
 {#key text}
-  <span aria-label={text}>
+  <span role="img" aria-label={text}>
     {#each [...text] as c, i}
       <span class="l" aria-hidden="true" style="animation-delay: {i * 28}ms">{c === ' ' ? ' ' : c}</span>
     {/each}

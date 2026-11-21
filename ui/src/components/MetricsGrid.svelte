@@ -15,17 +15,17 @@
   ]);
 </script>
 
-<dl class="grid">
+<div class="grid" role="list">
   {#each cells as [icon, label, value]}
-    <div class="cell">
+    <div class="cell" role="listitem">
       <Icon name={icon} size={1.5} />
       <div>
-        <dt class="muted">{label}</dt>
-        <dd><Roll {value} countUp /></dd>
+        <span class="muted k">{label}</span>
+        <span class="v"><Roll {value} countUp /></span>
       </div>
     </div>
   {/each}
-</dl>
+</div>
 
 <style>
   .grid {
@@ -41,13 +41,14 @@
     align-items: center;
     gap: 0.75rem;
   }
-  dt {
+  .k {
+    display: block;
     font-size: 0.75rem;
     font-weight: 500;
     letter-spacing: 0.02em;
   }
-  dd {
-    margin: 0;
+  .v {
+    display: block;
     font-size: 0.95rem;
     font-weight: 600;
   }
