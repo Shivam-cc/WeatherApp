@@ -22,7 +22,7 @@
   });
 </script>
 
-<section class="glass time" aria-label="Local time">
+<section class="glass drops time" aria-label="Local time">
   <div class="clock">{clock(now, tz, settings.hour12)}</div>
   <div class="muted date">{longDate(now, tz)}</div>
   <div class="chips">

@@ -7,9 +7,10 @@
   // svelte-ignore state_referenced_locally (initial snapshot is intended)
   let vals = $state({ ...scene.tween.current });
   let fps = $state(0);
+  let tier = $state('');
 
   $effect(() => {
-    const id = setInterval(() => (fps = Math.round(scene.fps)), 500);
+    const id = setInterval(() => ((fps = Math.round(scene.fps)), (tier = scene.tier.name)), 500);
     return () => clearInterval(id);
   });
 
@@ -20,7 +21,7 @@
 </script>
 
 <details class="lab glass">
-  <summary>SceneLab · {fps} fps</summary>
+  <summary>SceneLab · {fps} fps · {tier}</summary>
   {#each TWEEN_KEYS as k}
     <label>
       <span>{k}</span>

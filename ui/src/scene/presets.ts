@@ -44,3 +44,18 @@ export const IDLE: Targets = {
   uFog: 0,
   uLightning: 0,
 };
+
+/** Typical full-scene values per sky type, for `?preset=` (reproducible frames) and SceneLab. */
+const TYPICAL: Record<Sky, Targets> = {
+  Clear: { uCloudCover: 0.1, uWindSpeed: 8 },
+  Cloudy: { uCloudCover: 0.65, uWindSpeed: 14 },
+  Fog: { uCloudCover: 0.6, uFog: 1, uWindSpeed: 4 },
+  Rain: { uCloudCover: 0.9, uPrecip: 0.6, uWindSpeed: 22 },
+  Snow: { uCloudCover: 0.85, uSnow: 0.7, uWindSpeed: 10 },
+  Thunderstorm: { uCloudCover: 1, uPrecip: 0.85, uWindSpeed: 38 },
+};
+
+export function presetTargets(sky: Sky, now: Date, lat = 51.5, lon = 0): Targets {
+  const e = solarElevation(lat, lon, now);
+  return { uPrecip: 0, uSnow: 0, uFog: 0, uWindDir: Math.PI * 1.5, uSunElevation: e, uIsDay: e > 0 ? 1 : 0, uMoonPhase: moonPhase(now), ...TYPICAL[sky] };
+}

@@ -92,3 +92,24 @@ input:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Rain beads on the glass; --rain (0..1) is set from the scene's precipitation. */
+.drops {
+  position: relative;
+}
+.drops::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--rain, 0);
+  transition: opacity var(--dur-scene) var(--ease-inout);
+  background:
+    radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.45) 0 1.5px, rgba(255, 255, 255, 0.1) 2px 4px, transparent 5px),
+    radial-gradient(circle at 78% 14%, rgba(255, 255, 255, 0.4) 0 2px, rgba(255, 255, 255, 0.08) 3px 5px, transparent 6px),
+    radial-gradient(circle at 45% 70%, rgba(255, 255, 255, 0.4) 0 1.5px, rgba(255, 255, 255, 0.1) 2px 3.5px, transparent 4.5px),
+    radial-gradient(circle at 90% 62%, rgba(255, 255, 255, 0.45) 0 2.5px, rgba(255, 255, 255, 0.1) 3px 6px, transparent 7px),
+    radial-gradient(circle at 28% 88%, rgba(255, 255, 255, 0.4) 0 1px, rgba(255, 255, 255, 0.1) 1.5px 3px, transparent 4px),
+    radial-gradient(circle at 60% 36%, rgba(255, 255, 255, 0.35) 0 1px, transparent 3px);
+}

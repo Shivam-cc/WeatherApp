@@ -1,8 +1,11 @@
 import vertSrc from './shaders/sky.vert.glsl?raw';
 import fragSrc from './shaders/sky.frag.glsl?raw';
 import { DEFAULTS, TWEEN_KEYS, UniformTween, type TweenKey } from './uniforms';
+import { QualityController, TIERS, type Tier, type TierName } from './quality';
+import { Lightning } from './lightning';
 
 type Targets = Partial<Record<TweenKey, number>>;
+export type QualitySetting = 'auto' | 'high' | 'battery';
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string) {
   const s = gl.createShader(type)!;
@@ -12,23 +15,42 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string) {
   return s;
 }
 
+const NAMES = ['uTime', 'uSeed', 'uParallax', 'uDrift', 'uRes', 'uBolt', 'uOctaves', 'uLayers', 'uPost'];
+
 /** Full-screen WebGL2 sky. Renders only while something is moving and the window is visible. */
 export class Scene {
   readonly tween = new UniformTween(DEFAULTS);
   /** Smoothed frames per second, for SceneLab. */
   fps = 0;
+  /** Storm mode: lightning flashes on a seeded schedule. */
+  thunder = false;
+  /** Current quality tier (changes by itself in auto mode). */
+  tier: Tier = TIERS.high;
   private gl: WebGL2RenderingContext;
   private loc = new Map<string, WebGLUniformLocation | null>();
   private raf = 0;
-  private last = 0;
+  private lastRaf = 0;
+  private lastRender = 0;
   private time = 0;
   private drift = [0, 0];
   private par = [0, 0];
   private parTarget = [0, 0];
   private ro: ResizeObserver;
   private _animate = true;
+  private auto: QualityController | null = new QualityController('high');
+  private lightning: Lightning;
 
-  constructor(private canvas: HTMLCanvasElement) {
+  /**
+   * @param seed all randomness (lightning schedule, particle hashes) derives from it
+   * @param fixedClock when set, scene time starts here and lightning stays on even if frozen (tests, screenshots)
+   */
+  constructor(
+    private canvas: HTMLCanvasElement,
+    private seed = 1,
+    private fixedClock?: number,
+  ) {
+    this.time = fixedClock ?? 0;
+    this.lightning = new Lightning(seed);
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
     if (!gl) throw new Error('WebGL2 is not available');
     this.gl = gl;
@@ -39,7 +61,7 @@ export class Scene {
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog) ?? 'link failed');
     gl.useProgram(prog);
     gl.bindVertexArray(gl.createVertexArray()); // attribute-less draw still needs a VAO bound
-    for (const n of [...TWEEN_KEYS, 'uTime', 'uParallax', 'uDrift', 'uRes']) this.loc.set(n, gl.getUniformLocation(prog, n));
+    for (const n of [...TWEEN_KEYS, ...NAMES]) this.loc.set(n, gl.getUniformLocation(prog, n));
 
     this.ro = new ResizeObserver(() => {
       this.resize();
@@ -59,6 +81,12 @@ export class Scene {
     this._animate = v;
     if (!v) this.parTarget = [0, 0];
     this.run();
+  }
+
+  /** 'auto' adapts to frame rate; the others pin a tier. */
+  setQuality(q: QualitySetting) {
+    this.auto = q === 'auto' ? new QualityController(this.tier.name) : null;
+    if (q !== 'auto') this.applyTier(q === 'high' ? 'high' : 'low');
   }
 
   setTarget(t: Targets) {
@@ -85,6 +113,12 @@ export class Scene {
     this.gl.getExtension('WEBGL_lose_context')?.loseContext();
   }
 
+  private applyTier(name: TierName) {
+    this.tier = TIERS[name];
+    this.resize();
+    this.run();
+  }
+
   private onVisibility = () => {
     if (document.hidden) {
       cancelAnimationFrame(this.raf);
@@ -93,7 +127,7 @@ export class Scene {
   };
 
   private resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const dpr = Math.min(window.devicePixelRatio || 1, this.tier.maxDpr);
     const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * dpr));
     if (this.canvas.width !== w || this.canvas.height !== h) {
@@ -105,14 +139,27 @@ export class Scene {
 
   private run() {
     if (this.raf || document.hidden) return;
-    this.last = performance.now();
+    this.lastRaf = this.lastRender = performance.now();
     this.raf = requestAnimationFrame(this.frame);
   }
 
   private frame = (now: number) => {
     this.raf = 0;
-    const dt = Math.min((now - this.last) / 1000, 0.1);
-    this.last = now;
+    const gap = now - this.lastRaf;
+    this.lastRaf = now;
+    // Quality is judged on the gap between animation frames, whether or not we drew this one.
+    if (this.auto && this._animate) {
+      const next = this.auto.sample(gap, now);
+      if (next) this.applyTier(next);
+    }
+    // Frame-rate cap: skip drawing, keep the loop alive.
+    if (this._animate && now - this.lastRender < 1000 / this.tier.fps - 2) {
+      this.raf = requestAnimationFrame(this.frame);
+      return;
+    }
+    const dt = Math.min((now - this.lastRender) / 1000, 0.1);
+    this.lastRender = now;
+
     const moving = this.tween.update(now);
     const u = this.tween.current;
     let parMoving = false;
@@ -133,12 +180,20 @@ export class Scene {
   };
 
   private draw() {
-    const { gl, loc } = this;
+    const { gl, loc, tier } = this;
     for (const k of TWEEN_KEYS) gl.uniform1f(loc.get(k)!, this.tween.current[k]);
+    // Storms flash while animating, or on a fixed clock for reproducible frames; frozen scenes stay calm.
+    const flash = this.thunder && (this._animate || this.fixedClock !== undefined) ? this.lightning.at(this.time) : null;
+    gl.uniform1f(loc.get('uLightning')!, Math.max(this.tween.current.uLightning, flash?.env ?? 0));
+    gl.uniform3f(loc.get('uBolt')!, flash?.x ?? 0, flash?.seed ?? 0, flash?.bolt ?? 0);
     gl.uniform1f(loc.get('uTime')!, this.time);
+    gl.uniform1f(loc.get('uSeed')!, this.seed % 997);
     gl.uniform2f(loc.get('uParallax')!, this.par[0], this.par[1]);
     gl.uniform2f(loc.get('uDrift')!, this.drift[0], this.drift[1]);
     gl.uniform2f(loc.get('uRes')!, this.canvas.width, this.canvas.height);
+    gl.uniform1f(loc.get('uOctaves')!, tier.octaves);
+    gl.uniform1f(loc.get('uLayers')!, tier.layers);
+    gl.uniform1f(loc.get('uPost')!, tier.post);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 }

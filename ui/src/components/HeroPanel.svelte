@@ -6,7 +6,7 @@
   const w = $derived(app.weather!);
 </script>
 
-<section class="glass hero" aria-label="Current weather">
+<section class="glass drops hero" aria-label="Current weather">
   <div class="row">
     <span class="temp">{temp(w.current.tempC, settings.temp)}</span>
     <div class="toggle" role="group" aria-label="Temperature unit">
