@@ -7,6 +7,7 @@ test.describe.configure({ mode: 'serial' });
 let page: Page;
 let stop: () => Promise<void>;
 let saved: Record<string, string | null>;
+const PROVOKED = 'https://example.com/'; // the one foreign URL the CSP test fetches on purpose
 const problems: string[] = []; // console errors, uncaught exceptions, CSP violations
 
 test.beforeAll(async ({}, testInfo) => {
@@ -71,20 +72,28 @@ test('nonsense search shows the friendly not-found toast', async () => {
 });
 
 test('the CSP is enforced (a foreign origin is blocked by connect-src)', async ({}, testInfo) => {
-  const before = problems.length;
   // Observed: the dev window (pages served by Vite) raises no violation for a foreign origin, so only the release build proves the CSP.
   test.skip(testInfo.project.metadata.mode === 'dev', 'CSP is not enforced for the Vite-served dev window');
   const directive = await page.evaluate(
-    () =>
+    (url) =>
       new Promise<string>((resolve) => {
         document.addEventListener('securitypolicyviolation', (e) => resolve(e.violatedDirective), { once: true });
-        fetch('https://example.com/').catch(() => {});
+        fetch(url).catch(() => {});
         setTimeout(() => resolve('none'), 5000);
       }),
+    PROVOKED,
   );
   expect(directive).toMatch(/^connect-src/);
-  await page.evaluate(() => (window as any).__csp.splice(0)); // provoked on purpose, so drop its console noise too
-  problems.length = before;
+  // Drop only the noise from this test's own fetch; any other error, even during this test, still fails the run.
+  await page.evaluate((url) => ((window as any).__csp = (window as any).__csp.filter((v: string) => !v.includes(url))), PROVOKED);
+  for (let i = problems.length - 1; i >= 0; i--) if (problems[i].includes(PROVOKED)) problems.splice(i, 1);
+});
+
+test('the Manrope font loaded under the CSP', async () => {
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('16px "Manrope Variable"'))).toBe(true);
+  // check() is also true for unknown families, so also require a real, loaded FontFace.
+  expect(await page.evaluate(() => [...document.fonts].some((f) => f.family.includes('Manrope Variable') && f.status === 'loaded'))).toBe(true);
 });
 
 test('no console errors, page errors or CSP violations during the whole run', async () => {
