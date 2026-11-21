@@ -24,6 +24,7 @@ export const settings = $state({
 export const app = $state({
   weather: null as Weather | null,
   loading: false,
+  loadingLabel: '', // city being loaded, for the palette and the live region
   recents: (() => {
     const r = saved<{ list: Location[] }>('recents', { list: [] }).list;
     return Array.isArray(r) ? r.slice(0, 5) : [];
@@ -48,24 +49,35 @@ export function dismissToast(id: number) {
   app.toasts = app.toasts.filter((t) => t.id !== id);
 }
 
-async function run(p: Promise<Weather>): Promise<boolean> {
+let gen = 0; // newest request wins; cancelLoad() bumps it so a late result is ignored
+
+/** Drops the in-flight load (Esc in the palette): its result, success or failure, is ignored. */
+export function cancelLoad() {
+  gen++;
+  app.loading = false;
+}
+
+async function run(label: string, p: Promise<Weather>): Promise<boolean> {
+  const mine = ++gen;
   app.loading = true;
+  app.loadingLabel = label;
   try {
     const w = await p;
+    if (mine !== gen) return false;
     app.weather = w;
     const l = w.location;
     app.recents = [l, ...app.recents.filter((r) => r.lat !== l.lat || r.lon !== l.lon)].slice(0, 5);
     return true;
   } catch (e) {
-    toast(String(e));
+    if (mine === gen) toast(String(e));
     return false;
   } finally {
-    app.loading = false;
+    if (mine === gen) app.loading = false;
   }
 }
 
-export const loadLocation = (l: Location) => run(getWeatherAt(l));
-export const loadCity = (name: string) => run(getWeather(name));
+export const loadLocation = (l: Location) => run(l.name, getWeatherAt(l));
+export const loadCity = (name: string) => run(name, getWeather(name));
 
 /** Reopen the last city on launch. */
 export const restore = () => app.recents[0] && loadLocation(app.recents[0]);

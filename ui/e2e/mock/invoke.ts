@@ -2,7 +2,7 @@
 // Cities and numbers are a MOCK dataset (not real forecasts), generated deterministically.
 import type { Page } from '@playwright/test';
 
-export type MockOpts = { sky?: string; isDay?: boolean; tempC?: number }; // tempC: headline temperature, everything else shifts with it
+export type MockOpts = { sky?: string; isDay?: boolean; tempC?: number }; // tempC: headline temperature, everything else shifts with it; tests set window.__defer = true so later weather calls stay pending until window.__settle(true|false)
 
 export function mockInvoke(opts: MockOpts) {
   const NOT_FOUND = 'City not found. Check the spelling and try again.';
@@ -73,6 +73,10 @@ export function mockInvoke(opts: MockOpts) {
     transformCallback: () => 0,
     invoke: async (cmd: string, args: any) => {
       await new Promise((r) => setTimeout(r, 30));
+      if ((window as any).__defer && cmd.startsWith('get_weather')) {
+        const ok = await new Promise<boolean>((r) => ((window as any).__settle = r));
+        if (!ok) throw 'Network error. Check your connection.';
+      }
       if (cmd === 'search_city') {
         const q = String(args.query).trim().toLowerCase();
         return CITIES.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 5);

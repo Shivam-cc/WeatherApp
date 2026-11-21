@@ -1,38 +1,43 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
   import { app } from '../state/weather.svelte';
-  import { DUR } from '../motion/tokens';
 </script>
 
-<!-- The search bar becomes a shimmering pill while data loads; the panels desaturate (see App.svelte). -->
-{#if app.loading}
-  <div class="glass pill on-dark" role="progressbar" aria-label="Loading weather" transition:fade={{ duration: DUR.base }}></div>
+<!-- Palette closed (e.g. a refresh): a 2px accent line across the top of the window and nothing else.
+     While the palette is open it shows the loading state itself. The panels desaturate in App.svelte. -->
+{#if app.loading && !app.paletteOpen}
+  <div class="line on-dark" aria-hidden="true"></div>
 {/if}
+<div class="sr-only" aria-live="polite">{app.loading ? `Loading ${app.loadingLabel}…` : ''}</div>
 
 <style>
-  .pill {
+  .line {
     position: fixed;
-    top: 1rem;
-    left: 50%;
-    width: 14rem;
-    height: 2.25rem;
-    margin-left: -7rem;
+    inset: 0 0 auto 0;
+    height: 2px;
     z-index: 60;
     overflow: hidden;
+    pointer-events: none;
   }
-  .pill::after {
+  .line::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent) 0 0 / 40% 100% no-repeat;
-    animation: shimmer 1.1s linear infinite;
+    width: 35%;
+    background: var(--accent);
+    animation: sweep 1.1s var(--ease-inout) infinite;
   }
-  @keyframes shimmer {
+  @keyframes sweep {
     from {
-      background-position: -40% 0;
+      transform: translateX(-100%);
     }
     to {
-      background-position: 140% 0;
+      transform: translateX(290%);
     }
+  }
+  /* Reduced: no sweep, a steady full-width line. Static: nothing moves, but the line still shows. */
+  :global([data-motion='reduced']) .line::after,
+  :global([data-motion='static']) .line::after {
+    width: 100%;
+    animation: none !important;
   }
 </style>
