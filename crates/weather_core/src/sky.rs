@@ -20,3 +20,21 @@ pub fn sky(code: i64) -> Sky {
         _ => Sky::Cloudy,
     }
 }
+
+/// Human label for a WMO code.
+pub fn condition_text(code: i64) -> &'static str {
+    match code {
+        0 => "Clear",
+        1 => "Mostly clear",
+        2 => "Partly cloudy",
+        3 => "Overcast",
+        45 | 48 => "Fog",
+        51..=57 => "Drizzle",
+        61..=67 => "Rain",
+        71..=77 => "Snow",
+        80..=82 => "Showers",
+        85 | 86 => "Snow showers",
+        95..=99 => "Thunderstorm",
+        _ => "Cloudy",
+    }
+}

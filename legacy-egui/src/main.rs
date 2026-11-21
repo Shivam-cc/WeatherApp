@@ -30,7 +30,7 @@ fn sky_colors(w: Option<&Weather>) -> (Color32, Color32) {
     let Some(w) = w else {
         return (Color32::from_rgb(35, 45, 65), Color32::from_rgb(60, 70, 90));
     };
-    let ((r1, g1, b1), (r2, g2, b2)) = match sky(w.code) {
+    let ((r1, g1, b1), (r2, g2, b2)) = match sky(w.current.weather_code) {
         Sky::Clear => ((70, 140, 220), (240, 190, 140)),
         Sky::Cloudy => ((110, 130, 155), (200, 175, 150)),
         Sky::Fog => ((160, 165, 170), (200, 200, 200)),
@@ -38,7 +38,7 @@ fn sky_colors(w: Option<&Weather>) -> (Color32, Color32) {
         Sky::Snow => ((170, 185, 205), (230, 235, 240)),
         Sky::Thunderstorm => ((30, 32, 40), (90, 70, 60)),
     };
-    let k = if w.is_day { 1.0 } else { 0.3 };
+    let k = if w.current.is_day { 1.0 } else { 0.3 };
     let rgb = |r: u8, g: u8, b: u8| Color32::from_rgb((r as f32 * k) as u8, (g as f32 * k) as u8, (b as f32 * k) as u8);
     (rgb(r1, g1, b1), rgb(r2, g2, b2))
 }
@@ -78,9 +78,9 @@ impl eframe::App for App {
 
             ui.horizontal(|ui| {
                 if let Some(w) = &self.weather {
-                    let date = w.days.first().and_then(|d| parse_date(&d.date));
+                    let date = w.daily.first().and_then(|d| parse_date(&d.date));
                     let date = date.map(|(wd, m, d)| format!("   {}, {} {d}", WEEKDAYS[wd], MONTHS[m - 1])).unwrap_or_default();
-                    ui.label(RichText::new(format!("{}{date}", w.place)).size(16.0).color(ink));
+                    ui.label(RichText::new(format!("{}, {}{date}", w.location.name, w.location.country)).size(16.0).color(ink));
                 }
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     let idle = self.pending.is_none();
@@ -125,8 +125,8 @@ impl eframe::App for App {
             };
             ui.add_space(30.0);
             ui.horizontal(|ui| {
-                ui.label(RichText::new(deg(w.temp)).size(110.0).color(ink));
-                if let Some(d) = w.days.first() {
+                ui.label(RichText::new(deg(w.current.temp_c)).size(110.0).color(ink));
+                if let Some(d) = w.daily.first() {
                     ui.vertical(|ui| {
                         ui.add_space(28.0);
                         for (k, v) in [("H", d.max), ("L", d.min)] {
@@ -135,18 +135,18 @@ impl eframe::App for App {
                     });
                 }
             });
-            let mut headline = format!("{:?}", sky(w.code));
-            if !w.is_day {
+            let mut headline = format!("{:?}", sky(w.current.weather_code));
+            if !w.current.is_day {
                 headline += " night";
             }
-            if w.wind > 30.0 {
+            if w.current.wind_kmh > 30.0 {
                 headline += ", windy";
             }
             ui.label(RichText::new(headline).size(52.0).color(ink));
-            ui.label(RichText::new(format!("Wind {} km/h", w.wind)).size(16.0).color(soft));
+            ui.label(RichText::new(format!("Wind {} km/h", w.current.wind_kmh)).size(16.0).color(soft));
 
             let r = ui.max_rect();
-            paint_forecast(ui.painter(), Rect::from_min_max(pos2(r.left(), r.bottom() - 180.0), r.right_bottom()), &w.days, ink);
+            paint_forecast(ui.painter(), Rect::from_min_max(pos2(r.left(), r.bottom() - 180.0), r.right_bottom()), &w.daily, ink);
         });
         if self.weather.is_some() {
             ctx.request_repaint(); // keep the background animating
@@ -199,7 +199,7 @@ fn paint_sky(p: &Painter, r: Rect, w: Option<&Weather>, t: f32, top: Color32, bo
     mesh.add_triangle(0, 2, 3);
     p.add(mesh);
     let Some(w) = w else { return };
-    let (s, day, wind) = (sky(w.code), w.is_day, w.wind as f32);
+    let (s, day, wind) = (sky(w.current.weather_code), w.current.is_day, w.current.wind_kmh as f32);
     let (width, height) = (r.width(), r.height());
     let at = |fx: f32, fy: f32| pos2(r.left() + fx * width, r.top() + fy * height);
     let rgba = Color32::from_rgba_unmultiplied;

@@ -7,6 +7,6 @@ mod types;
 
 pub use api::{fetch, search};
 pub use format::{MONTHS, WEEKDAYS, deg, parse_date};
-pub use parse::{parse_location, parse_locations, parse_weather};
-pub use sky::{Sky, sky};
-pub use types::{Day, Location, Res, Weather};
+pub use parse::{parse_locations, parse_weather};
+pub use sky::{Sky, condition_text, sky};
+pub use types::{Current, Day, DayPart, DayParts, Hour, Location, Res, Today, Weather};
