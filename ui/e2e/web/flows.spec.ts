@@ -18,11 +18,16 @@ test('unknown city shows the toast and reopens the palette with a shaking field'
   await open(page, { qs: 'static' });
   await page.keyboard.press('Control+k');
   await page.keyboard.type('Atlantis');
+  // The shake class lasts only ~400ms, so record that it appeared rather than racing to catch it.
+  await page.evaluate(() => {
+    (window as any).__shook = false;
+    new MutationObserver(() => ((window as any).__shook ||= !!document.querySelector('.field.shake'))).observe(document.body, { subtree: true, attributes: true, childList: true });
+  });
   await page.keyboard.press('Enter');
   await expect(page.getByRole('alert')).toContainText('City not found. Check the spelling and try again.');
   await expect(palette(page)).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'City' })).toHaveValue('Atlantis');
-  await expect(page.locator('.field')).toHaveClass(/shake/);
+  await expect.poll(() => page.evaluate(() => (window as any).__shook)).toBe(true);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('London'); // old city kept
 });
 
