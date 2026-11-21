@@ -1726,6 +1726,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "legacy-egui"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "weather_core",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3745,10 +3753,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "weather_app"
+name = "weather_core"
 version = "0.1.0"
 dependencies = [
- "eframe",
  "serde_json",
  "ureq",
 ]

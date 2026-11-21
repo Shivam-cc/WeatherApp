@@ -1,6 +1,6 @@
 use eframe::egui::{self, pos2, vec2, Align, Align2, Color32, FontId, Layout, Painter, Rect, RichText, Sense, Shape, Stroke};
 use std::f32::consts::{PI, TAU};
-use serde_json::Value;
+use weather_core::{Day, Sky, Weather, WEEKDAYS, MONTHS, deg, fetch, parse_date, sky};
 use std::sync::mpsc::{channel, Receiver};
 
 fn main() -> eframe::Result {
@@ -26,64 +26,6 @@ struct App {
     pending: Option<Receiver<Result<Weather, String>>>,
 }
 
-#[derive(Debug, PartialEq)]
-struct Weather {
-    place: String,
-    temp: f64,
-    wind: f64,
-    code: i64,
-    is_day: bool,
-    days: Vec<Day>,
-}
-
-#[derive(Debug, PartialEq)]
-struct Day {
-    date: String,
-    code: i64,
-    max: f64,
-    min: f64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Sky {
-    Clear,
-    Cloudy,
-    Fog,
-    Rain,
-    Snow,
-    Thunderstorm,
-}
-
-// WMO weather codes, as used by Open-Meteo.
-fn sky(code: i64) -> Sky {
-    match code {
-        0 => Sky::Clear,
-        45 | 48 => Sky::Fog,
-        51..=67 | 80..=82 => Sky::Rain,
-        71..=77 | 85 | 86 => Sky::Snow,
-        95..=99 => Sky::Thunderstorm,
-        _ => Sky::Cloudy,
-    }
-}
-
-const WEEKDAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTHS: [&str; 12] = [
-    "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
-];
-
-/// "2026-11-20" -> (weekday 0=Sunday, month 1..=12, day). Sakamoto's method, so no date crate is needed.
-fn parse_date(date: &str) -> Option<(usize, usize, u32)> {
-    let mut it = date.split('-').map(|x| x.parse::<i32>().ok());
-    let (mut y, m, d) = (it.next()??, it.next()??, it.next()??);
-    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
-        return None;
-    }
-    let t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
-    y -= (m < 3) as i32;
-    let w = (y + y / 4 - y / 100 + y / 400 + t[m as usize - 1] + d).rem_euclid(7);
-    Some((w as usize, m as usize, d as u32))
-}
-
 fn sky_colors(w: Option<&Weather>) -> (Color32, Color32) {
     let Some(w) = w else {
         return (Color32::from_rgb(35, 45, 65), Color32::from_rgb(60, 70, 90));
@@ -105,11 +47,6 @@ fn sky_colors(w: Option<&Weather>) -> (Color32, Color32) {
 fn ink(top: Color32, bot: Color32) -> Color32 {
     let l = |c: Color32| 0.3 * c.r() as f32 + 0.59 * c.g() as f32 + 0.11 * c.b() as f32;
     if (l(top) + l(bot)) / 2.0 > 150.0 { Color32::from_rgb(35, 35, 45) } else { Color32::WHITE }
-}
-
-/// Whole degrees; `+ 0.0` turns -0 into 0 so -0.3 shows as "0°".
-fn deg(v: f64) -> String {
-    format!("{:.0}°", v.round() + 0.0)
 }
 
 fn glass(ink: Color32) -> egui::Frame {
@@ -453,119 +390,4 @@ fn rnd(i: u32, salt: u32) -> f32 {
 /// Wraps a coordinate into -pad..len+pad so things leave one edge and re-enter at the other.
 fn wrap(v: f32, len: f32, pad: f32) -> f32 {
     v.rem_euclid(len + 2.0 * pad) - pad
-}
-
-type Res<T> = Result<T, Box<dyn std::error::Error>>;
-
-fn get(url: &str, query: &[(&str, &str)]) -> Res<String> {
-    Ok(ureq::get(url).query_pairs(query.iter().copied()).call()?.body_mut().read_to_string()?)
-}
-
-fn fetch(city: &str) -> Res<Weather> {
-    if city.is_empty() {
-        return Err("enter a city name".into());
-    }
-    let geo = get("https://geocoding-api.open-meteo.com/v1/search", &[("name", city), ("count", "1")])?;
-    let (lat, lon, place) = parse_location(&geo)?;
-    let (lat, lon) = (lat.to_string(), lon.to_string());
-    let wx = get(
-        "https://api.open-meteo.com/v1/forecast",
-        &[
-            ("latitude", &lat),
-            ("longitude", &lon),
-            ("current", "temperature_2m,wind_speed_10m,weather_code,is_day"),
-            ("daily", "weather_code,temperature_2m_max,temperature_2m_min"),
-            ("forecast_days", "5"),
-            ("timezone", "auto"),
-        ],
-    )?;
-    parse_weather(&wx, place)
-}
-
-fn parse_location(json: &str) -> Res<(f64, f64, String)> {
-    let v: Value = serde_json::from_str(json)?;
-    let r = &v["results"][0];
-    let (Some(lat), Some(lon)) = (r["latitude"].as_f64(), r["longitude"].as_f64()) else {
-        return Err("city not found".into());
-    };
-    let name = r["name"].as_str().unwrap_or("?");
-    let country = r["country"].as_str().unwrap_or("");
-    Ok((lat, lon, format!("{name}, {country}")))
-}
-
-fn parse_weather(json: &str, place: String) -> Res<Weather> {
-    let v: Value = serde_json::from_str(json)?;
-    let bad = || "unexpected weather response";
-    let (c, d) = (&v["current"], &v["daily"]);
-    let days = d["time"].as_array().ok_or_else(bad)?.iter().enumerate().map(|(i, date)| {
-        Some(Day {
-            date: date.as_str()?.to_owned(),
-            code: d["weather_code"][i].as_i64()?,
-            max: d["temperature_2m_max"][i].as_f64()?,
-            min: d["temperature_2m_min"][i].as_f64()?,
-        })
-    });
-    Ok(Weather {
-        place,
-        temp: c["temperature_2m"].as_f64().ok_or_else(bad)?,
-        wind: c["wind_speed_10m"].as_f64().ok_or_else(bad)?,
-        code: c["weather_code"].as_i64().ok_or_else(bad)?,
-        is_day: c["is_day"].as_i64().ok_or_else(bad)? == 1,
-        days: days.collect::<Option<_>>().ok_or_else(bad)?,
-    })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parses_location() {
-        let json = r#"{"results":[{"name":"London","country":"United Kingdom","latitude":51.5,"longitude":-0.12}]}"#;
-        assert_eq!(parse_location(json).unwrap(), (51.5, -0.12, "London, United Kingdom".into()));
-        assert!(parse_location(r#"{"generationtime_ms":0.1}"#).is_err());
-    }
-
-    #[test]
-    fn parses_weather() {
-        let json = r#"{"current":{"temperature_2m":12.3,"wind_speed_10m":8.1,"weather_code":61,"is_day":0},
-            "daily":{"time":["2026-11-20","2026-11-21"],"weather_code":[61,3],
-                     "temperature_2m_max":[13.0,11.5],"temperature_2m_min":[7.2,5.0]}}"#;
-        let w = parse_weather(json, "X".into()).unwrap();
-        assert_eq!((w.temp, w.wind, w.code, w.is_day), (12.3, 8.1, 61, false));
-        assert_eq!(w.days[1], Day { date: "2026-11-21".into(), code: 3, max: 11.5, min: 5.0 });
-        assert!(parse_weather("{}", "X".into()).is_err());
-    }
-
-    #[test]
-    fn formats_degrees() {
-        assert_eq!((deg(-0.3), deg(-0.6), deg(21.5)), ("0°".into(), "-1°".into(), "22°".into()));
-    }
-
-    #[test]
-    fn parses_dates() {
-        assert_eq!(parse_date("2026-11-20"), Some((5, 11, 20))); // Friday
-        assert_eq!(parse_date("2024-02-29"), Some((4, 2, 29))); // Thursday, leap day
-        assert_eq!(parse_date("2025-01-01"), Some((3, 1, 1))); // Wednesday, January uses the year shift
-        assert_eq!(parse_date("2026-13-01"), None);
-        assert_eq!(parse_date("nope"), None);
-    }
-
-    #[test]
-    fn maps_codes_to_sky() {
-        let cases = [(0, Sky::Clear), (2, Sky::Cloudy), (45, Sky::Fog), (63, Sky::Rain), (81, Sky::Rain), (75, Sky::Snow), (86, Sky::Snow), (95, Sky::Thunderstorm)];
-        for (code, want) in cases {
-            assert_eq!(sky(code), want, "code {code}");
-        }
-    }
-}
-
-#[cfg(test)]
-mod live {
-    #[test]
-    #[ignore = "hits the network; run with `cargo test -- --ignored`"]
-    fn fetches_real_city() {
-        let w = super::fetch("Oslo").unwrap();
-        assert_eq!(w.days.len(), 5);
-    }
 }

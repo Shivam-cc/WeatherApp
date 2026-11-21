@@ -29,7 +29,7 @@ You need [Rust](https://www.rust-lang.org/tools/install), with Cargo.
 ```sh
 git clone https://github.com/Shivam-cc/WeatherApp.git
 cd WeatherApp
-cargo run --release
+cargo run -p legacy-egui --release
 ```
 
 Type a city into the search box and press Enter or click the magnifier.

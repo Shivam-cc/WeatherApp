@@ -1,0 +1,9 @@
+[package]
+name = "legacy-egui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+eframe = "0.37.0"
+weather_core = { path = "../crates/weather_core" }
