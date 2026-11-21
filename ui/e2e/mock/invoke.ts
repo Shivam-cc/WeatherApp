@@ -2,7 +2,7 @@
 // Cities and numbers are a MOCK dataset (not real forecasts), generated deterministically.
 import type { Page } from '@playwright/test';
 
-export type MockOpts = { sky?: string; isDay?: boolean };
+export type MockOpts = { sky?: string; isDay?: boolean; tempC?: number }; // tempC: headline temperature, everything else shifts with it
 
 export function mockInvoke(opts: MockOpts) {
   const NOT_FOUND = 'City not found. Check the spelling and try again.';
@@ -25,6 +25,7 @@ export function mockInvoke(opts: MockOpts) {
   const sky = opts.sky ?? 'Clear';
   const [code, text] = CODE[sky];
   const isDay = opts.isDay ?? true;
+  const d = (opts.tempC ?? 12) - 12; // shift applied to every temperature
   const wet = sky === 'Rain' || sky === 'Thunderstorm';
 
   const build = (location: (typeof CITIES)[number]) => {
@@ -32,23 +33,23 @@ export function mockInvoke(opts: MockOpts) {
       const day = i < 12 ? '20' : i < 36 ? '21' : '22';
       return {
         time: `2026-03-${day}T${String((12 + i) % 24).padStart(2, '0')}:00`,
-        tempC: Math.round((12 + 4 * Math.sin(((i - 3) / 24) * 2 * Math.PI)) * 10) / 10,
+        tempC: Math.round((12 + d + 4 * Math.sin(((i - 3) / 24) * 2 * Math.PI)) * 10) / 10,
         weatherCode: code,
         precipProb: wet ? 70 : 5,
       };
     });
-    const part = { tempC: 12, weatherCode: code, sky };
+    const part = { tempC: 12 + d, weatherCode: code, sky };
     return {
       location,
       timezone: location.timezone,
       utcOffsetSeconds: 0,
       current: {
-        tempC: 12,
+        tempC: 12 + d,
         windKmh: sky === 'Thunderstorm' ? 34 : 11,
         windDirDeg: 240,
         humidity: wet ? 88 : 62,
         pressureHpa: 1013,
-        dewPointC: 7.5,
+        dewPointC: 7.5 + d,
         visibilityM: sky === 'Fog' ? 800 : 10000,
         cloudCover: sky === 'Clear' ? 5 : 90,
         precipMm: wet ? 1.2 : 0,
@@ -59,10 +60,10 @@ export function mockInvoke(opts: MockOpts) {
         sky,
         conditionText: text,
       },
-      today: { highC: 15, lowC: 6, uvIndexMax: 4, sunrise: '2026-03-20T06:02', sunset: '2026-03-20T18:14' },
-      dayParts: { morning: { ...part, tempC: 8 }, afternoon: { ...part, tempC: 14 }, evening: { ...part, tempC: 10 } },
+      today: { highC: 15 + d, lowC: 6 + d, uvIndexMax: 4, sunrise: '2026-03-20T06:02', sunset: '2026-03-20T18:14' },
+      dayParts: { morning: { ...part, tempC: 8 + d }, afternoon: { ...part, tempC: 14 + d }, evening: { ...part, tempC: 10 + d } },
       hourly,
-      daily: [15, 13, 12, 14, 16].map((max, i) => ({ date: `2026-03-${20 + i}`, code, max, min: max - 8 })),
+      daily: [15, 13, 12, 14, 16].map((max, i) => ({ date: `2026-03-${20 + i}`, code, max: max + d, min: max + d - 8 })),
     };
   };
 
