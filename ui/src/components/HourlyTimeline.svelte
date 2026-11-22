@@ -41,7 +41,10 @@
   .scroll {
     overflow-x: auto;
     padding: 0.5rem 0;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+  }
+  .scroll::-webkit-scrollbar {
+    display: none;
   }
   .row {
     display: grid;

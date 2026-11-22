@@ -27,3 +27,19 @@ for (const [width, height] of SIZES) {
     });
   });
 }
+
+test('hourly timeline: no scrollbar gutter, still overflows and scrolls', async ({ page }) => {
+  await open(page, { qs: 'static' });
+  await page.getByRole('tab', { name: 'Hourly Forecast' }).click();
+  const el = page.getByRole('region', { name: 'Hourly forecast' });
+  await expect(el).toBeVisible();
+  const r = await el.evaluate((e) => {
+    const gutter = e.offsetHeight - e.clientHeight;
+    const overflows = e.scrollWidth > e.clientWidth;
+    e.scrollLeft = 200;
+    return { gutter, overflows, left: e.scrollLeft };
+  });
+  expect(r.gutter).toBe(0);
+  expect(r.overflows).toBe(true);
+  expect(r.left).toBeGreaterThan(0);
+});
