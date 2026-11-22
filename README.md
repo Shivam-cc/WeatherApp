@@ -22,7 +22,7 @@ A desktop weather app with a living sky: a real-time WebGL scene that follows th
 
 ## Install (Windows)
 
-1. Get `Weather_1.0.1_x64-setup.exe`. Build it yourself with the steps in [Run and build](#run-and-build); it is written to `target/release/bundle/nsis/`. No prebuilt download is published yet.
+1. Download `Weather_1.0.1_x64-setup.exe` from the [latest release](https://github.com/Shivam-cc/WeatherApp/releases/latest). To build it yourself instead, follow [Run and build](#run-and-build); it is written to `target/release/bundle/nsis/`.
 2. Run the installer. It installs for the current user, so it needs no administrator rights. If Windows SmartScreen warns about an unknown publisher, choose "More info", then "Run anyway" (the installer is unsigned).
 3. Start **Weather** from the Start menu. Uninstall it from Windows Settings, Apps.
 
