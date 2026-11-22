@@ -20,6 +20,14 @@ A desktop weather app with a living sky: a real-time WebGL scene that follows th
 - **Settings.** °C/°F, km/h or mph, 12 or 24-hour clock, and quality (Auto, High, Battery). Auto steps the scene down on slow GPUs.
 - **Motion and accessibility.** Motion can be Full, Reduced or Static (it also follows the system's reduced-motion setting). Dialogs trap focus, the page behind them is inert, and the interface has no serious axe violations in the tested states. Text colour adapts to the sky so it stays readable.
 
+## Install (Windows)
+
+1. Get `Weather_1.0.1_x64-setup.exe`. Build it yourself with the steps in [Run and build](#run-and-build); it is written to `target/release/bundle/nsis/`. No prebuilt download is published yet.
+2. Run the installer. It installs for the current user, so it needs no administrator rights. If Windows SmartScreen warns about an unknown publisher, choose "More info", then "Run anyway" (the installer is unsigned).
+3. Start **Weather** from the Start menu. Uninstall it from Windows Settings, Apps.
+
+Silent install and uninstall, for scripts: `Weather_1.0.1_x64-setup.exe /S`, then `%LOCALAPPDATA%\Weather\uninstall.exe /S`. See [Install notes](#install-notes) for what an uninstall keeps.
+
 ## Stack
 
 Tauri v2, Svelte 5, TypeScript, Vite, and a WebGL2 scene. The Rust side is a small library crate with the weather logic.
